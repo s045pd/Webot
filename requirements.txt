@@ -1,0 +1,14 @@
+Click==7.0
+pandas==0.24.2
+pygame==1.9.6
+imgcat==0.3.0
+retry==0.9.2
+PyExecJS==1.5.1
+openpyxl==2.6.2
+moment==0.8.2
+urlextract==0.10
+requests_html==0.10.0
+PySnooper==0.1.0
+termcolor==1.1.0
+Pillow==6.0.0
+progressbar2==3.42.0
