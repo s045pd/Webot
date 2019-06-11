@@ -45,18 +45,18 @@ bot().run(True, False)
 - `from`为发送者ID
 - `to`为接受者ID
 
-```json
+```python
 {
-	'content': '你好',
-	'from': '@1798bad2f5dc126a19450ef2c86aa8e3',
- 	'from_nick': 'zhangsan',
-	'is_group': False,
-	'is_me': True,
-	'raw_content': '你好',
-	'time': 1560230438,
-	'to': '@8ef49591902e6c6642732eb7289a5619456u98965f6ea32fa671fe3ab33a002f',
-	'to_nick': 'filehelper',
-	'type': 'text'
+	"content": "你好",
+	"from": "@1798bad2f5dc126a19450ef2c86aa8e3",
+ 	"from_nick": "zhangsan",
+	"is_group": False,
+	"is_me": True,
+	"raw_content": "你好",
+	"time": 1560230438,
+	"to": "@8ef49591902e6c6642732eb7289a5619456u98965f6ea32fa671fe3ab33a002f",
+	"to_nick": "filehelper",
+	"type": "text"
 }
 
 ```
