@@ -12,8 +12,9 @@ from PIL import Image
 from imgcat import imgcat
 
 from .common import error_log, get_pic
-from .data import API_conf_path
+from .data import API_conf_path, MSG_TYPES
 from .log import debug, success, warning
+from .conf import conf
 
 
 class Device:
@@ -66,7 +67,6 @@ class Device:
         # code_img.start()
         imgcat(Image.open(buffer))
 
-
     @error_log()
     def trans_map(contacts, batch_contacts):
         """
@@ -85,6 +85,30 @@ class Device:
             for _ in _["MemberList"]:
                 person_map[_["UserName"]] = _["NickName"]
         return person_map
+
+    @staticmethod
+    def filters(types=None, is_me=False, is_group=False):
+        """
+            消息过滤
+        """
+        def decorator(func):
+            def wrapper(obj, msg, *args, **kwargs):
+                nonlocal types
+                if not types or not isinstance(types, list):
+                    types = []
+                if msg["type"] not in types:
+                    return
+                if is_group:
+                    if not "@@" in msg["from"]:
+                        return
+                if is_me:
+                    if not msg["from"] == conf.my_id:
+                        return
+                return func(obj, msg, *args, **kwargs)
+
+            return wrapper
+
+        return decorator
 
     @error_log()
     def export_all_contact(contacts, session, person_data):

@@ -25,7 +25,7 @@ from .common import (
     get_pic,
     initPath,
 )
-from .conf import config
+from .conf import conf
 from .data import *
 from .exporter import create_json, load_worker, save_file, save_worker
 from .log import debug, error, error_exit, info, success, warning
@@ -37,7 +37,7 @@ class Webot(object):
     def __init__(self, *args, **kwargs):
         super(Webot, self, *args, **kwargs).__init__()
         self.__session = requests_html.HTMLSession()
-        self.__session.headers = config.fakeHeader
+        self.__session.headers = conf.fakeHeader
         self.__session.cookies = requests_html.requests.utils.cookiejar_from_dict(
             {
                 "MM_WX_NOTIFY_STATE": "1",
@@ -223,6 +223,7 @@ class Webot(object):
         )
         resp.encoding = "utf8"
         self.__person_data = resp.json()
+        conf.my_id = self.__person_data["User"]["UserName"]
         create_json(self.__person_data, f"{API_conf_path}/person_data.json")
         success(
             f"{'Welcome'.center(20,'*')}: [{self.__person_data['User']['NickName']}]"
@@ -505,8 +506,8 @@ class Webot(object):
                         msgs = self.get_msg_contents()
                         debug(f"Contents: {msgs}")
                         for msg in msgs["AddMsgList"]:
-                            self.data_ctrl(msg)
-                            self.send_back(msg)
+                            _, result = self.data_ctrl(msg)
+                            self.send_back(result)
                     elif retcode == "1101":
                         self.__is_online = False
                         break
@@ -560,11 +561,12 @@ class Webot(object):
     def msg_is_self(self, target):
         return target["FromUserName"] == self.__person_data["User"]["UserName"]
 
+    @error_log()
     def data_ctrl(self, msg):
+
         """
-            打印基础消息
+            打印基础消息并整理
         """
-        # pprint(msg)
         msg_type = msg["MsgType"]
         sub_type = msg["SubMsgType"]
         is_me = self.msg_is_self(msg)
@@ -573,28 +575,44 @@ class Webot(object):
         to_user_name = "" if is_group else f'-> 【{msg["ToUserName"]}】'
         func = info if is_me else success
         content = f'{content_header}【{msg["FromUserName"]}】{to_user_name}:'
+        result = {
+            "time": msg["CreateTime"],
+            "from": msg["FromUserName"],
+            "from_nick": self.translate_text(msg["FromUserName"]),
+            "to": msg["ToUserName"],
+            "to_nick": self.translate_text(msg["ToUserName"]),
+            "type": MSG_TYPES[msg_type].lower(),
+            "content": "",
+            "raw_content": msg["Content"],
+            "is_me": is_me,
+            "is_group": is_group,
+        }
         if msg_type == MSGTYPE_TEXT:
             if sub_type == 0:
-                content += msg["Content"]
+                result["content"] = msg["Content"]
             elif sub_type == 48:
-                content += msg["Content"].split(":")[0]
+                result["content"] = msg["Content"].split(":")[0]
         elif msg_type == MSGTYPE_VOICE:
-            voice = self.get_voice(msg["MsgId"], config.play_voice)
+            voice = self.get_voice(msg["MsgId"], conf.play_voice)
             filename = f"datas/{msg['MsgId']}.mp3"
             save_file(voice, filename)
-            content += filename
+            result["content"] = filename
         elif msg_type == MSGTYPE_EMOTICON:
-            url = URLExtract().find_urls(msg["Content"])[0]
-            imgcat(Image.open(BytesIO(get_pic(self.__session, url, True))))
-            content += url
-            msg["Content"] = url
+            urls = URLExtract().find_urls(msg["Content"])
+            if not urls:
+                return
+            imgcat(Image.open(BytesIO(get_pic(self.__session, urls[0], True))))
+            result["content"] = urls[0]
         elif msg_type == MSGTYPE_APP:
-            content += "公众号推送"
+            pass
+            # content += "公众号推送"
         elif msg_type == MSGTYPE_STATUSNOTIFY:
             # content += "进入/退出"
-            return
-        if msg_type not in []:
-            func(self.translate_text(content))
+            pass
+        if msg_type not in [] and result["content"]:
+            func(self.translate_text(content + result["content"]))
+
+        return msg, result
 
     def send_back(self, msg):
         pass
@@ -641,7 +659,7 @@ class Webot(object):
 
     @error_log()
     def run_add_on(self):
-        if config.export_xlsx:
+        if conf.export_xlsx:
             Device.export_all_contact(
                 self.__contacts, self.__session, self.__person_data
             )
@@ -649,8 +667,8 @@ class Webot(object):
     @error_log(raise_exit=True)
     def run(self, hot_reload=False, export_xlsx=False, debug=False):
         self.__hot_reload = bool(hot_reload)
-        config.debug = bool(debug)
-        config.export_xlsx = bool(export_xlsx)
+        conf.debug = bool(debug)
+        conf.export_xlsx = bool(export_xlsx)
         self.login()
         while not self.get_ticket():
             self.__hot_reload = False
