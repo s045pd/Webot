@@ -16,7 +16,7 @@ from PIL import Image
 from retry import retry
 from urlextract import URLExtract
 
-from .common import (
+from webot.common import (
     addfailed,
     addsucess,
     checkPath,
@@ -25,12 +25,12 @@ from .common import (
     get_pic,
     initPath,
 )
-from .conf import conf
-from .data import *
-from .exporter import create_json, load_worker, save_file, save_worker
-from .log import debug, error, error_exit, info, success, warning
-from .parser import Parser
-from .util import Device
+from webot.conf import conf
+from webot.data import *
+from webot.exporter import create_json, load_worker, save_file, save_worker
+from webot.log import debug, error, error_exit, info, success, warning
+from webot.parser import Parser
+from webot.util import Device
 
 
 class Webot(object):

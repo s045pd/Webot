@@ -11,10 +11,10 @@ from openpyxl.drawing.image import Image as openpyxlImage
 from PIL import Image
 from imgcat import imgcat
 
-from .common import error_log, get_pic
-from .data import API_conf_path, MSG_TYPES
-from .log import debug, success, warning
-from .conf import conf
+from webot.common import error_log, get_pic
+from webot.data import API_conf_path, MSG_TYPES
+from webot.log import debug, success, warning
+from webot.conf import conf
 
 
 class Device:

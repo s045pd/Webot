@@ -1,9 +1,9 @@
 import re
 
-from .common import error_log
-from .conf import config
-from .log import error, info, success, warning
-from .data import *
+from webot.common import error_log
+from webot.conf import config
+from webot.log import error, info, success, warning
+from webot.data import *
 import re
 
 

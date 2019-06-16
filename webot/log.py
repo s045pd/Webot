@@ -2,7 +2,7 @@ import logging
 
 from termcolor import colored
 
-from .conf import config
+from webot.conf import config
 
 
 def makeStatus(status=True):

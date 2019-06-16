@@ -6,9 +6,9 @@ from contextlib import contextmanager
 import moment
 from retry import retry
 
-from .conf import config
-from .data import API_target
-from .log import error, info
+from webot.conf import config
+from webot.data import API_target
+from webot.log import error, info
 from urllib.parse import urljoin
 
 
