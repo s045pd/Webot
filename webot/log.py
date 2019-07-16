@@ -37,9 +37,15 @@ def error(data, status=False):
     return data
 
 
-def debug(data, status=False):
+def debug(data):
     if config.debug:
         Loger.info(f"{colored(data,'cyan')}")
+    return data
+
+
+def debug_error_log(data, is_start=True):
+    if config.debug:
+        Loger.info(f"{colored(data,'cyan' if is_start else 'red' )}")
     return data
 
 

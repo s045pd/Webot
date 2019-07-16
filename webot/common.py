@@ -8,7 +8,7 @@ from retry import retry
 
 from webot.conf import config
 from webot.data import API_target
-from webot.log import error, info
+from webot.log import error, info, debug, debug_error_log
 from urllib.parse import urljoin
 
 
@@ -23,19 +23,21 @@ def get_pic(session, url, full=False):
 def error_log(target="", default=None, raise_err=False, raise_exit=False):
     def decorator(func):
         def wrapper(*args, **kwargs):
+            func_name = func.__name__ if "__name__" in dir(func) else ""
+            debug_error_log(f"start {func_name}")
             try:
                 return func(*args, **kwargs)
             except KeyboardInterrupt:
                 exit()
             except Exception as e:
-                error(
-                    f"[{target} {  func.__name__  if '__name__' in dir(func) else ''  }]: {e}"
-                )
+                error(f"[{target} {func_name}]: {e}")
                 if raise_exit:
                     exit()
                 elif raise_err:
                     raise e
                 return default
+            finally:
+                debug_error_log(f"end {func_name}", False)
 
         return wrapper
 

@@ -163,7 +163,6 @@ class Webot(object):
         """
         warning("Waiting for app confirm")
         resp = self.login_wait(False)
-        print(resp.url)
         if get_ticket:
             success("Login Success")
             self.__get_ticket_url = Parser.get_get_ticket_url(resp)
@@ -378,14 +377,18 @@ class Webot(object):
         """
             检查在线状态
         """
-        while True:
-            if not self.__is_online:
-                success("Logout!")
-                for name, threadTarget in self.__thread_pool.items():
-                    debug(f"{name} closed!")
-                    threadTarget.join()
-                exit()
-            time.sleep(1)
+        try:
+            while True:
+                if not self.__is_online:
+                    warning("ready for logout")
+                    for name, threadTarget in self.__thread_pool.items():
+                        debug(f"{name} closed!")
+                        threadTarget.join()
+                    success("end!")
+                    exit()
+                time.sleep(1)
+        except Exception:
+            self.__is_online = False
 
     @error_log()
     def send_text(self, target, msg):
@@ -493,68 +496,69 @@ class Webot(object):
             消息处理
         """
 
+        debug("start msg worker")
+
         def worker():
-            try:
-                while True:
-                    sync_check_res = self.get_msg_signal()
-                    debug(f"sync_check_res: {sync_check_res}")
-                    retcode, selector = (
-                        sync_check_res["retcode"],
-                        sync_check_res["selector"],
-                    )
-                    if retcode == "0" and int(selector) > 0:
-                        msgs = self.get_msg_contents()
-                        debug(f"Contents: {msgs}")
-                        for msg in msgs["AddMsgList"]:
-                            _, result = self.data_ctrl(msg)
-                            self.send_back(result)
-                    elif retcode == "1101":
-                        self.__is_online = False
-                        break
-            except KeyboardInterrupt:
-                pass
+            debug("start main loop")
+            while True:
+                sync_check_res = self.get_msg_signal()
+                debug(f"sync_check_res: {sync_check_res}")
+                retcode, selector = (
+                    sync_check_res["retcode"],
+                    sync_check_res["selector"],
+                )
+                if retcode == "0" and int(selector) > 0:
+                    msgs = self.get_msg_contents()
+                    debug(f"Contents: {msgs}")
+                    for msg in msgs["AddMsgList"]:
+                        _, result = self.data_ctrl(msg)
+                        self.send_back(result)
+                elif retcode == "1101":
+                    self.__is_online = False
+                    warning("main loop offline")
+                    return
 
         def interaction():
             """
                 简单交互式面板
             """
-            try:
-                while True:
-                    if not self.__is_online:
-                        break
-                    try:
-                        cmd = input(">>>")
-                        if not cmd:
-                            pass
-                        else:
-                            print(eval(cmd))
-                    except Exception as e:
-                        error(e)
-                    finally:
-                        time.sleep(0.1)
-            except KeyboardInterrupt:
-                pass
+            debug("start isnteraction")
+            while True:
+                if not self.__is_online or not conf.need_interaction:
+                    warning("isnteraction offline")
+                    return
+                try:
+                    cmd = input(">>>")
+                    if not cmd:
+                        pass
+                    else:
+                        print(eval(cmd))
+                except Exception as e:
+                    error(e)
+                finally:
+                    time.sleep(0.1)
 
         def voice():
-            try:
-                pygame.mixer.init()
-                while True:
-                    while self.__voice_pool:
-                        pygame.mixer.music.load(self.__voice_pool.pop())
-                        pygame.mixer.music.play()
-                    time.sleep(2)
-            except KeyboardInterrupt:
-                pass
+            debug("start voice detector")
+            pygame.mixer.init()
+            while True:
+                if not self.__is_online:
+                    warning("voice detector offline")
+                    return
+                while self.__voice_pool:
+                    pygame.mixer.music.load(self.__voice_pool.pop())
+                    pygame.mixer.music.play()
+                time.sleep(2)
 
         def trystart(item):
             try:
                 item.start()
-            except Exception:
-                pass
+            except Exception as e:
+                error(e)
 
         self.__thread_pool["msg_hook"] = threading.Thread(target=worker)
-        self.__thread_pool["interaction"] = threading.Thread(target=interaction)
         self.__thread_pool["voice_hook"] = threading.Thread(target=voice)
+        self.__thread_pool["interaction"] = threading.Thread(target=interaction)
         list(map(lambda item: trystart(item[1]), self.__thread_pool.items()))
         self.check_online_status()
 
@@ -659,16 +663,18 @@ class Webot(object):
 
     @error_log()
     def run_add_on(self):
+        debug("check add on")
         if conf.export_xlsx:
             Device.export_all_contact(
                 self.__contacts, self.__session, self.__person_data
             )
 
     @error_log(raise_exit=True)
-    def run(self, hot_reload=False, export_xlsx=False, debug=False):
+    def run(self, hot_reload=False, export_xlsx=False, debug=False, interaction=False):
         self.__hot_reload = bool(hot_reload)
         conf.debug = bool(debug)
         conf.export_xlsx = bool(export_xlsx)
+        conf.need_interaction = bool(interaction)
         self.login()
         while not self.get_ticket():
             self.__hot_reload = False

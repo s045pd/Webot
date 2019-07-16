@@ -91,6 +91,7 @@ class Device:
         """
             消息过滤
         """
+
         def decorator(func):
             def wrapper(obj, msg, *args, **kwargs):
                 nonlocal types
