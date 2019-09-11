@@ -1,7 +1,7 @@
 import re
 
 from webot.common import error_log
-from webot.log import error, success, warning
+from webot.log import success, warning
 from webot.data import *
 
 

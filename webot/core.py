@@ -63,7 +63,8 @@ class Webot(object):
 
     def post(self, url, *args, **kargs):
         resp = self.__session.post(url, *args, **kargs)
-        assert resp.status_code == 200 and resp.content
+        if not resp.status_code == 200 and resp.content:
+            raise AssertionError()
         resp.encoding = "utf8"
         return resp
 

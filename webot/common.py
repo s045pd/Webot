@@ -15,7 +15,7 @@ def get_pic(session, url, full=False):
     try:
         return session.get(url if full else urljoin(API_target, url)).content
     except Exception as e:
-        raise
+        raise e
 
 
 def error_log(target="", default=None, raise_err=False, raise_exit=False):
