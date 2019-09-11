@@ -1,10 +1,8 @@
 import re
 
 from webot.common import error_log
-from webot.conf import config
-from webot.log import error, info, success, warning
+from webot.log import error, success, warning
 from webot.data import *
-import re
 
 
 class Parser:

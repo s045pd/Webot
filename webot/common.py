@@ -1,14 +1,12 @@
-import copy
 import os
 import time
 from contextlib import contextmanager
 
-import moment
 from retry import retry
 
 from webot.conf import config
 from webot.data import API_target
-from webot.log import error, info, debug, debug_error_log
+from webot.log import error, info, debug_error_log
 from urllib.parse import urljoin
 
 
@@ -97,7 +95,7 @@ def make_chunk(datas, length=512):
             try:
                 data = next(datas)
                 chunk.append(data)
-            except Exception as e:
+            except Exception:
                 data = None
                 break
         yield chunk

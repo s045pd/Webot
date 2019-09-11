@@ -483,7 +483,7 @@ class Webot(object):
         """
             好友索引
         """
-        for index, value in enumerate(self.__contacts["MemberList"]):
+        for value in self.__contacts["MemberList"]:
             if hashid == value["UserName"]:
                 return value
         return {}
