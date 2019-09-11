@@ -12,17 +12,15 @@
 
 ## 现有功能
 
-所有的语音数据将被保存至```data```文件夹中
+所有的语音数据将被保存至```datas```文件夹中
 
 所有的摘要、身份、及朋友列表存至```extra```文件夹中
 
 -  简单文字消息回复
 -  消息过滤
--  实时信息展示(带斗图表情)
+-  实时信息展示(带斗图表情(MAC平台))
 -  语音消息自动播报及保存
 -  通讯录导出
-
-
 
 ## 环境安装
 
@@ -38,7 +36,7 @@ python3 -m pip install -r requirements.txt
 
 ## 额外配置 
 
-在安装好依赖之后,我们在通过```webot/conf.py```该文件进行默认配置修改,各参数作用如下。
+在安装好依赖之后,我们在通过```webot/conf.py```该文件进行默认配置修改, 也可以通过```run```方法传入, 各参数作用如下。
 
 -  ```debug = True```  开启debug模式
 -  ```play_voice = True```  自动播报声音
@@ -72,7 +70,9 @@ bot().run(True, False)
 
 ![](./media/demo.png)
 
-## 消息格式
+## 功能详解
+
+### 1.消息格式
 
 -  `from`为发送者ID
 -  `to`为接受者ID
@@ -92,11 +92,28 @@ bot().run(True, False)
 }
 
 ```
+### 2.通讯录导出结果
+
+所有的好友、公众号信息都会被保存至```xxx_contacts.xlsx```中。
+
+![](./media/xlsx.png)
+
+
+### 3.语音消息及播报
+
+语音流将会按照被下载存储,并通过pygame播放,但不知为何播放的声音仿佛过了变声器一般。
+
+![](./media/voice.png)
+
+### 4.机器人预设回复及表情
+
+![](./media/robot.png)
 
 ## TODO
 
 -  文件及图片发送
 -  其他更多思考中的功能
+-  基于sqlite的消息记录
 
 ## 📝 License
 
@@ -104,4 +121,4 @@ This project is [MIT](https://github.com/kefranabg/readme-md-generator/blob/mast
 
 ***
 
-如果您觉得这个脚本对您有用，可别忘了star哟。
+如果您觉得这个脚本对您有用，可别忘了star哟🐶。

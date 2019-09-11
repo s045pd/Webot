@@ -6,11 +6,13 @@ from io import BytesIO
 
 import execjs
 import pygame
+import requests
 import requests_html
 from imgcat import imgcat
 from PIL import Image
 from retry import retry
 from urlextract import URLExtract
+from dataclasses import dataclass
 
 from webot.common import (
     addfailed,
@@ -28,31 +30,29 @@ from webot.log import debug, error, info, success, warning
 from webot.parser import Parser
 from webot.util import Device
 
+@dataclass()
+class Webot:
+    __session = requests_html.HTMLSession()
+    __session.headers = conf.fakeHeader
+    __session.cookies = requests_html.requests.utils.cookiejar_from_dict(
+        {
+            "MM_WX_NOTIFY_STATE": "1",
+            "MM_WX_SOUND_STATE": "1",
+            "mm_lang": "zh_CN",
+            "login_frequency": "1",
+        }
+    )
+    __thread_pool = {}  # 任务池
+    __voice_pool = []  # 语音池
+    __is_online = True  # 初始化上线
+    __appid = "wx782c26e4c19acffb"  # appID
+    __encoding = None  # 默认编码格式
 
-class Webot(object):
-    def __init__(self, *args, **kwargs):
-        super(Webot, self, *args, **kwargs).__init__()
-        self.__session = requests_html.HTMLSession()
-        self.__session.headers = conf.fakeHeader
-        self.__session.cookies = requests_html.requests.utils.cookiejar_from_dict(
-            {
-                "MM_WX_NOTIFY_STATE": "1",
-                "MM_WX_SOUND_STATE": "1",
-                "mm_lang": "zh_CN",
-                "login_frequency": "1",
-            }
-        )
-        self.__thread_pool = {}  # 任务池
-        self.__voice_pool = []  # 语音池
-        self.__is_online = True  # 初始化上线
-        self.__appid = "wx782c26e4c19acffb"  # appID
-        self.__encoding = None  # 默认编码格式
+    __qr_code_uuid = None  # 二维码UUID
+    __device_id = Device.create_device_id()
 
-        self.__qr_code_uuid = None  # 二维码UUID
-        self.__device_id = Device.create_device_id()
-
-        self.__msg_id = None  # 消息id
-        self.__hot_reload = None  # 热启动参数
+    __msg_id = None  # 消息id
+    __hot_reload = None  # 热启动参数
 
     def get(self, url, *args, **kargs):
         resp = self.__session.get(url, *args, **kargs)
@@ -668,11 +668,15 @@ class Webot(object):
             )
 
     @error_log(raise_exit=True)
-    def run(self, hot_reload=False, export_xlsx=False, debug=False, interaction=False):
-        self.__hot_reload = bool(hot_reload)
-        conf.debug = bool(debug)
-        conf.export_xlsx = bool(export_xlsx)
-        conf.need_interaction = bool(interaction)
+    def run(self, hot_reload=None, export_xlsx=None, debug=None, interaction=None):
+        if hot_reload != None:
+            self.__hot_reload = bool(hot_reload)
+        if export_xlsx != None:
+            conf.export_xlsx = bool(export_xlsx)
+        if debug != None:
+            conf.debug = bool(debug)
+        if interaction != None:
+            conf.need_interaction = bool(interaction)
         self.login()
         while not self.get_ticket():
             self.__hot_reload = False
