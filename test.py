@@ -1,6 +1,5 @@
 from webot.core import Webot
 from webot.util import Device
-from pprint import pprint
 
 
 class bot(Webot):

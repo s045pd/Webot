@@ -1,18 +1,17 @@
 import random
 import string
-import threading
 import time
 from io import BytesIO
 
 import execjs
 import progressbar
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.drawing.image import Image as openpyxlImage
 from PIL import Image
 from imgcat import imgcat
 
 from webot.common import error_log, get_pic
-from webot.data import API_conf_path, MSG_TYPES
+from webot.data import API_conf_path
 from webot.log import debug, success, warning
 from webot.conf import conf
 

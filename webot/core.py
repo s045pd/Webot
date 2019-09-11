@@ -1,15 +1,11 @@
 import hashlib
 import json
-import re
 import threading
 import time
 from io import BytesIO
-from pprint import pprint
 
-import click
 import execjs
 import pygame
-import pysnooper
 import requests_html
 from imgcat import imgcat
 from PIL import Image
@@ -28,7 +24,7 @@ from webot.common import (
 from webot.conf import conf
 from webot.data import *
 from webot.exporter import create_json, load_worker, save_file, save_worker
-from webot.log import debug, error, error_exit, info, success, warning
+from webot.log import debug, error, info, success, warning
 from webot.parser import Parser
 from webot.util import Device
 
@@ -60,7 +56,8 @@ class Webot(object):
 
     def get(self, url, *args, **kargs):
         resp = self.__session.get(url, *args, **kargs)
-        assert resp.status_code == 200 and resp.content
+        if not resp.status_code == 200 and resp.content:
+            raise AssertionError()
         resp.encoding = "utf8"
         return resp
 
@@ -200,7 +197,7 @@ class Webot(object):
                 )
                 # self.login_push_wait()
                 # self.login_appwait(False)
-            except Exception as e:
+            except Exception:
                 error("Hot reload timeout!")
                 self.__hot_reload = False
                 self.login()
@@ -263,7 +260,7 @@ class Webot(object):
         """
             消息信号检查
         """
-        callBack = {"retcode": "0", "selector": "0"}
+        call_back = {"retcode": "0", "selector": "0"}
         try:
             resp = self.get(
                 API_synccheck,
@@ -278,17 +275,17 @@ class Webot(object):
                 },
                 timeout=API_checktimeout,
             )
-            assert resp.status_code == 200
-            callBack = execjs.eval(resp.text.replace("window.synccheck=", ""))
+            if not resp.status_code == 200:
+                raise AssertionError()
+            call_back = execjs.eval(resp.text.replace("window.synccheck=", ""))
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.Timeout:
             pass
         except Exception as e:
             error(e)
-        finally:
-            time.sleep(1)
-            return callBack
+        time.sleep(1)
+        return call_back
 
     @retry()
     @error_log(raise_exit=True)
@@ -437,7 +434,7 @@ class Webot(object):
         with open(filename, "rb") as file:
             datas = file.read()
             lens = len(datas)
-            resp = self.post(
+            self.post(
                 API_webwxuploadmedia,
                 params={"f": "json"},
                 json={
@@ -480,7 +477,7 @@ class Webot(object):
         """
         for index, value in enumerate(self.__contacts["MemberList"]):
             if strs in value["NickName"]:
-                print(f"{value['NickName'].ljust(4)}{value['UserName'].rjust(10)}")
+                print(f"[{index}]{value['NickName'].ljust(4)}{value['UserName'].rjust(10)}")
 
     def index_friend(self, hashid):
         """

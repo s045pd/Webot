@@ -3,8 +3,7 @@ import pickle
 
 import pandas
 
-from webot.common import checkPath, checkTimes, initPath
-from webot.log import success
+from webot.common import checkTimes, initPath
 
 
 def create_xlsx(datas, columns, filename="res.xlsx"):
