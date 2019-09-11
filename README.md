@@ -10,11 +10,11 @@
 </p>
 
 
-
-
-
-
 ## 现有功能
+
+所有的语音数据将被保存至```data```文件夹中
+
+所有的摘要、身份、及朋友列表存至```extra```文件夹中
 
 -  简单文字消息回复
 -  消息过滤
@@ -22,11 +22,28 @@
 -  语音消息自动播报及保存
 -  通讯录导出
 
+
+
 ## 环境安装
 
+首先保证您已经安装了```python3.7.4```及以上版本,然后依次运行如下命令。
+
 ```sh
+git clone https://github.com/aoii103/Webot.git
+
+cd webot
+
 python3 -m pip install -r requirements.txt
 ```
+
+## 额外配置 
+
+在安装好依赖之后,我们在通过```webot/conf.py```该文件进行默认配置修改,各参数作用如下。
+
+-  ```debug = True```  开启debug模式
+-  ```play_voice = True```  自动播报声音
+-  ```export_xlsx = True```  自动导出好友列表
+-  ```need_interaction = False```  交互式shell
 
 ## 案例用法
 下面是一个简单的文本回复案例即```test.py```
@@ -48,6 +65,9 @@ class bot(Webot):
 
 bot().run(True, False)
 ```
+
+当然我们也可以通过```python3 test.py```直接使用默认测试案例。
+
 以下是运行开始的截图!
 
 ![](./media/demo.png)
@@ -77,3 +97,11 @@ bot().run(True, False)
 
 -  文件及图片发送
 -  其他更多思考中的功能
+
+## 📝 License
+
+This project is [MIT](https://github.com/kefranabg/readme-md-generator/blob/master/LICENSE) licensed.
+
+***
+
+如果您觉得这个脚本对您有用，可别忘了star哟。
