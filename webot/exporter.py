@@ -1,5 +1,6 @@
 import json
 import pickle
+import pathlib
 
 import pandas
 
@@ -19,7 +20,7 @@ def create_xlsx(datas, columns, filename="res.xlsx"):
 def create_json(datas, filename="res.json"):
     with checkTimes(f"Saved {filename}"):
         initPath(filename)
-        with open(filename, "w") as f:
+        with pathlib.Path(filename).open("w") as f:
             f.write(json.dumps(datas, ensure_ascii=False, indent=4))
 
 
@@ -29,7 +30,7 @@ def save_worker(data, filename="res.pkl"):
     """
     with checkTimes(f"Saved {filename}"):
         initPath(filename)
-        with open(filename, "wb") as f:
+        with pathlib.Path(filename).open("wb") as f:
             pickle.dump((data), f)
 
 
@@ -39,7 +40,7 @@ def load_worker(filename="res.pkl"):
     """
     with checkTimes(f"Saved {filename}"):
         initPath(filename)
-        with open(filename, "rb") as f:
+        with pathlib.Path(filename).open("rb") as f:
             return pickle.load(f)
 
 
@@ -48,5 +49,5 @@ def save_file(data, filename):
         文件保存
     """
     initPath(filename)
-    with open(filename, "wb") as f:
+    with pathlib.Path(filename).open("wb") as f:
         f.write(data)

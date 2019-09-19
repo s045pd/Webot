@@ -22,6 +22,16 @@
 -  语音消息自动播报及保存
 -  通讯录导出
 
+## 逻辑图
+- `【varb】` 指代变量名
+
+### 登录逻辑图
+
+
+![](./media/webot_login.png)
+
+[mindnode文件](./media/webot_login.mindnode)
+
 ## 环境安装
 
 首先保证您已经安装了```python3.7.4```及以上版本,然后依次运行如下命令。

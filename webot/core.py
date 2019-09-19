@@ -5,9 +5,12 @@ import time
 from io import BytesIO
 
 import execjs
+import pathlib
 import pygame
 import requests
 import requests_html
+import filetype
+from io import BytesIO
 from imgcat import imgcat
 from PIL import Image
 from retry import retry
@@ -432,7 +435,7 @@ class Webot:
         """
             文本文件发送
         """
-        with open(filename, "rb") as file:
+        with pathlib.Path(filename).open("rb") as file:
             datas = file.read()
             lens = len(datas)
             self.post(
@@ -441,8 +444,8 @@ class Webot:
                 json={
                     "id": "WU_FILE_0",
                     "name": filename,
-                    "type": "image/png",
-                    "lastModifiedDate": "Tue May 21 2019 12:28:20 GMT 0800 (中国标准时间)",
+                    "type": filetype(BytesIO(data)).mime ,
+                    "lastModifiedDate": "Tue May 21 2019 00:00:00 GMT 0800 (中国标准时间)",
                     "size": lens,
                     "mediatype": "pic",
                     "uploadmediarequest": {
