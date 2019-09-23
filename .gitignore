@@ -127,7 +127,6 @@ dmypy.json
 
 # Config
 celerybeat-schedule.db
-conf.py
 
 # Log
 ghostdriver.log

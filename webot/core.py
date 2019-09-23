@@ -2,7 +2,7 @@ import hashlib
 import json
 import threading
 import time
-from io import BytesIO
+
 
 import execjs
 import pathlib
@@ -86,7 +86,7 @@ class Webot:
             获取二维码
         """
         resp = self.get(f"{API_qrcode}{self.__qr_code_uuid}")
-        Device.show_qrcode(BytesIO(resp.content))
+        Device.show_qrcode(resp.content)
 
     @error_log()
     def get_base_request(self):

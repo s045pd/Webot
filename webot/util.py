@@ -57,14 +57,15 @@ class Device:
         """
             打印图片
         """
-
-        # def open():
-        #     img = Image.open(buffer)
-        #     img.show()
-
-        # code_img = threading.Thread(target=open)
-        # code_img.start()
-        imgcat(Image.open(buffer))
+        def open():
+            img = Image.open(BytesIO(buffer))
+            img.show()
+        try:
+            imgcat(buffer)
+        except Exception as e:
+            code_img = threading.Thread(target=open)
+            code_img.start()
+        
 
     @error_log()
     def trans_map(contacts, batch_contacts):
