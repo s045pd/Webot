@@ -4,6 +4,9 @@ class config:
     debug = False
     play_voice = True
     export_xlsx = False
+    make_icon_wall = True
+    sunburst_city = True
+
     need_interaction = False
 
     fakeHeader = {

@@ -6,7 +6,10 @@ import time
 
 import execjs
 import pathlib
-import pygame
+import contextlib
+
+with contextlib.redirect_stdout(None):
+    import pygame
 import requests
 import requests_html
 import filetype
@@ -20,11 +23,12 @@ from dataclasses import dataclass
 from webot.common import (
     addfailed,
     addsucess,
-    checkPath,
-    checkTimes,
+    check_path,
+    check_times,
     error_log,
     get_pic,
-    initPath,
+    init_path,
+    format_sunburst_city,
 )
 from webot.conf import conf
 from webot.data import *
@@ -32,6 +36,7 @@ from webot.exporter import create_json, load_worker, save_file, save_worker
 from webot.log import debug, error, info, success, warning
 from webot.parser import Parser
 from webot.util import Device
+
 
 @dataclass()
 class Webot:
@@ -194,7 +199,7 @@ class Webot:
         """
             获取认证数据
         """
-        if self.__hot_reload and checkPath(API_hotreload_file):
+        if self.__hot_reload and check_path(API_hotreload_file):
             try:
                 self.__session, self.__auth_data, self.__person_data, self.__get_ticket_url = load_worker(
                     API_hotreload_file
@@ -223,8 +228,9 @@ class Webot:
         )
         resp.encoding = "utf8"
         self.__person_data = resp.json()
+        self.__nick = self.__person_data["User"]["NickName"]
         conf.my_id = self.__person_data["User"]["UserName"]
-        create_json(self.__person_data, f"{API_conf_path}/person_data.json")
+        create_json(self.__person_data, API_static_path / "person_data.json")
         success(
             f"{'Welcome'.center(20,'*')}: [{self.__person_data['User']['NickName']}]"
         )
@@ -332,7 +338,7 @@ class Webot:
             },
         )
         self.__contacts = resp.json()
-        create_json(self.__contacts, f"{API_conf_path}/contacts.json")
+        create_json(self.__contacts, API_static_path / "contacts.json")
         info(f"Get friends: [{self.__contacts['MemberCount']}]")
 
     @error_log()
@@ -359,7 +365,20 @@ class Webot:
         )
         self.__batch_contacts = resp.json()
         self.__person_map = Device.trans_map(self.__contacts, self.__batch_contacts)
-        create_json(self.__batch_contacts, f"{API_conf_path}/batch_contacts.json")
+        create_json(self.__batch_contacts, API_static_path / "batch_contacts.json")
+
+    @error_log()
+    def get_image(self, msg_id, play=False):
+        """
+            获得视频数据
+        """
+        resp = self.get(
+            API_webwxgetmsgimg,
+            params={"msgid": msg_id, "skey": self.__auth_data["skey"]},
+        )
+        if play:
+            pass
+        return resp.content
 
     @error_log()
     def get_voice(self, msg_id, play=False):
@@ -373,6 +392,26 @@ class Webot:
         if play:
             self.__voice_pool.insert(0, BytesIO(resp.content))
         return resp.content
+
+    @error_log()
+    def get_video(self, msg_id, play=False):
+        """
+            获得视频数据
+        """
+        self.get_image(msg_id,play)
+        content = BytesIO()
+        for item in self.get(
+            API_webwxgetvideo,
+            params={"msgid": msg_id, "skey": self.__auth_data["skey"]},
+            headers={'Range': 'bytes=0-'},
+            stream=True
+        ).iter_content():
+            print(1024)
+            content.write(item)
+        if play:
+            pass
+        return content.getvalue()
+
 
     def check_online_status(self):
         """
@@ -444,7 +483,7 @@ class Webot:
                 json={
                     "id": "WU_FILE_0",
                     "name": filename,
-                    "type": filetype(BytesIO(data)).mime ,
+                    "type": filetype(BytesIO(data)).mime,
                     "lastModifiedDate": "Tue May 21 2019 00:00:00 GMT 0800 (中国标准时间)",
                     "size": lens,
                     "mediatype": "pic",
@@ -481,7 +520,9 @@ class Webot:
         """
         for index, value in enumerate(self.__contacts["MemberList"]):
             if strs in value["NickName"]:
-                print(f"[{index}]{value['NickName'].ljust(4)}{value['UserName'].rjust(10)}")
+                print(
+                    f"[{index}]{value['NickName'].ljust(4)}{value['UserName'].rjust(10)}"
+                )
 
     def index_friend(self, hashid):
         """
@@ -580,6 +621,7 @@ class Webot:
         to_user_name = "" if is_group else f'-> 【{msg["ToUserName"]}】'
         func = info if is_me else success
         content = f'{content_header}【{msg["FromUserName"]}】{to_user_name}:'
+        create_json(msg, str(API_static_path / "⚡️current_msg.json"))  # 实时日志分析
         result = {
             "time": msg["CreateTime"],
             "from": msg["FromUserName"],
@@ -592,6 +634,7 @@ class Webot:
             "is_me": is_me,
             "is_group": is_group,
         }
+        number = f"{result['time']}_{result['from_nick']}_{msg['MsgId']}"  # 消息编号
         if msg_type == MSGTYPE_TEXT:
             if sub_type == 0:
                 result["content"] = msg["Content"]
@@ -599,14 +642,26 @@ class Webot:
                 result["content"] = msg["Content"].split(":")[0]
         elif msg_type == MSGTYPE_VOICE:
             voice = self.get_voice(msg["MsgId"], conf.play_voice)
-            filename = f"datas/{msg['MsgId']}.mp3"
+            filename = str(API_meida_voice_path / f"{number}.mp3")
             save_file(voice, filename)
+            result["content"] = filename
+        elif msg_type == MSGTYPE_VIDEO:
+            video = self.get_video(msg["MsgId"])
+            filename = str(API_meida_video_path / f"{number}.mp4")
+            save_file(video, filename)
+            result["content"] = filename
+        elif msg_type == MSGTYPE_IMAGE:
+            image = self.get_image(msg["MsgId"])
+            filename = str(API_meida_image_path / f"{number}.png")
+            imgcat(Image.open(BytesIO(image)))
+            save_file(image, filename)
             result["content"] = filename
         elif msg_type == MSGTYPE_EMOTICON:
             urls = URLExtract().find_urls(msg["Content"])
             if not urls:
                 return
-            imgcat(Image.open(BytesIO(get_pic(self.__session, urls[0], True))))
+            filename = str(API_meida_emoji_path / f"{number}.png")
+            imgcat(Image.open(BytesIO(get_pic(self.__session, urls[0], filename))))
             result["content"] = urls[0]
         elif msg_type == MSGTYPE_APP:
             pass
@@ -664,18 +719,41 @@ class Webot:
 
     @error_log()
     def run_add_on(self):
+
         debug("check add on")
         if conf.export_xlsx:
             Device.export_all_contact(
                 self.__contacts, self.__session, self.__person_data
             )
+        if conf.make_icon_wall:
+            Device.make_icon_wall(
+                API_media_icon_path,
+                API_analysis_path / f"{self.__nick}_icon_wall.png",
+                patterns="*_0",
+            )
+        if conf.sunburst_city:
+            Device.export_sunburst_city(
+                self.__contacts, API_analysis_path / f"{self.__nick}_sunburst_city.html"
+            )
 
     @error_log(raise_exit=True)
-    def run(self, hot_reload=None, export_xlsx=None, debug=None, interaction=None):
+    def run(
+        self,
+        hot_reload=None,
+        export_xlsx=None,
+        sunburst_city=None,
+        make_icon_wall=None,
+        debug=None,
+        interaction=None,
+    ):
         if hot_reload != None:
             self.__hot_reload = bool(hot_reload)
         if export_xlsx != None:
             conf.export_xlsx = bool(export_xlsx)
+        if sunburst_city != None:
+            conf.sunburst_city = bool(sunburst_city)
+        if make_icon_wall != None:
+            conf.make_icon_wall = bool(make_icon_wall)
         if debug != None:
             conf.debug = bool(debug)
         if interaction != None:

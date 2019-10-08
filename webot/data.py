@@ -200,19 +200,29 @@ MM_EMOTICON_WEB = "_web"
 
 
 # -------------------------------------------------------------------------
-
 API_checktimeout = 25.04
 API_checknums = 5
 
+from webot.common import init_path
+
+
 YOUR_NAME = "张三"
-API_conf_path = "extra"
-API_log_path = "static"
+API_conf_path = init_path("extra/")
 
-API_hotreload_file = f"{API_conf_path}/wxbot.pkl"
-API_qrcode_name = f"{API_conf_path}/qrcode.jpg"
+API_log_path = init_path(f"{API_conf_path}/log/")  # 聊天记录 markdown
+API_static_path = init_path(f"{API_conf_path}/static/")  # 生成的配置文件及实时记录
+API_analysis_path = init_path(f"{API_conf_path}/analysis/")  # 各类分析结果及导出数据
 
+API_media_path = init_path(f"{API_conf_path}/meidas/")  # 媒体数据
+API_media_icon_path = init_path(f"{API_media_path}/icons/")  # 头像
+API_meida_voice_path = init_path(f"{API_media_path}/voices/")  # 语音
+API_meida_image_path = init_path(f"{API_media_path}/images/")  # 图片
+API_meida_emoji_path = init_path(f"{API_media_path}/emoji/")  # 表情
+API_meida_video_path = init_path(f"{API_media_path}/videos/")  # 视频
 
-# Webot_logger_format_test = "[| %(asctime)s | %(created)f | %(filename)s | %(funcName)s | %(levelname)s | %(levelno)s | %(lineno)d | %(module)s | %(msecs)d| %(name)s | %(pathname)s | %(process)d | %(processName)s | %(relativeCreated)d| %(thread)d | %(threadName)s ]"
+API_hotreload_file = f"{API_static_path}/wxbot.pkl"
+API_qrcode_name = f"{API_static_path}/qrcode.jpg"
+
 Webot_logger_format = "[%(asctime)s] >>> %(levelname)s  %(name)s: %(message)s"
 
 MSG_TYPES = {

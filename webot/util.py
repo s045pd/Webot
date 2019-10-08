@@ -1,17 +1,37 @@
 import random
 import string
 import time
+import math
+import pathlib
+import threading
+import requests
 from io import BytesIO
 
 import execjs
 import progressbar
+from itertools import product
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as openpyxlImage
+from pyecharts import options as opts
+from pyecharts.charts import Sunburst
 from PIL import Image
 from imgcat import imgcat
+from urllib.parse import urljoin
 
-from webot.common import error_log, get_pic
-from webot.data import API_conf_path
+from webot.common import (
+    error_log,
+    get_pic,
+    random_color,
+    format_sunburst_city,
+    check_if_can_open,
+)
+from webot.data import (
+    API_conf_path,
+    API_media_path,
+    API_target,
+    API_media_icon_path,
+    API_analysis_path,
+)
 from webot.log import debug, success, warning
 from webot.conf import conf
 
@@ -19,7 +39,7 @@ from webot.conf import conf
 class Device:
     @staticmethod
     @error_log()
-    def create_device_id():
+    def create_device_id() -> str:
         """
             创建随机设备指纹
         """
@@ -29,7 +49,7 @@ class Device:
 
     @staticmethod
     @error_log()
-    def create_client_msg_id():
+    def create_client_msg_id() -> str:
         """
             创建客户端信息指纹
         """
@@ -39,7 +59,7 @@ class Device:
 
     @staticmethod
     @error_log()
-    def get_timestamp(reverse=False):
+    def get_timestamp(reverse: bool = False) -> int:
         """
             获取时间戳,支持取反
         """
@@ -53,22 +73,23 @@ class Device:
 
     @staticmethod
     @error_log()
-    def show_qrcode(buffer):
+    def show_qrcode(buffer) -> None:
         """
             打印图片
         """
+
         def open():
             img = Image.open(BytesIO(buffer))
             img.show()
+
         try:
             imgcat(buffer)
         except Exception as e:
             code_img = threading.Thread(target=open)
             code_img.start()
-        
 
     @error_log()
-    def trans_map(contacts, batch_contacts):
+    def trans_map(contacts: dict, batch_contacts: dict) -> dict:
         """
             创建名称列表
         """
@@ -87,7 +108,7 @@ class Device:
         return person_map
 
     @staticmethod
-    def filters(types=None, is_me=False, is_group=False):
+    def filters(types: bool = None, is_me: bool = False, is_group: bool = False):
         """
             消息过滤
         """
@@ -112,7 +133,9 @@ class Device:
         return decorator
 
     @error_log()
-    def export_all_contact(contacts, session, person_data):
+    def export_all_contact(
+        contacts: dict, session: requests.Session, person_data: dict
+    ) -> pathlib.Path:
         """
             导出通讯录
         """
@@ -133,18 +156,95 @@ class Device:
                         data = "".join(data)
                     sheet.cell(row=y, column=x, value=data)
                 else:
-                    picData = get_pic(session, data)
-                    if picData:
+                    pic = get_pic(
+                        session,
+                        urljoin(API_target, data),
+                        API_media_icon_path
+                        / f"{item['PYInitial']}_{item['VerifyFlag']}.png",
+                    )
+                    if pic:
                         x = x - 1
-                        indexCode = string.ascii_uppercase[x]
+                        index_code = string.ascii_uppercase[x]
                         size = (50, 50)
-                        sheet.column_dimensions[indexCode].width, sheet.row_dimensions[
+                        sheet.column_dimensions[index_code].width, sheet.row_dimensions[
                             y
                         ].height = size
-                        img = openpyxlImage(BytesIO(picData))
+                        img = openpyxlImage(BytesIO(pic))
                         img.width, img.height = size
-                        sheet.add_image(img, f"{indexCode}{y}")
+                        sheet.add_image(img, f"{index_code}{y}")
                     else:
                         sheet.cell(row=y, column=x, value="")
-        wb.save(f'{API_conf_path}/{person_data["User"]["NickName"]}_contacts.xlsx')
-        success("Complete!")
+        path = API_analysis_path / f'{person_data["User"]["NickName"]}_contacts.xlsx'
+        wb.save(path)
+        success(f"export contacts: {path}")
+        return path
+
+    @error_log()
+    def export_sunburst_city(
+        data: dict, image_result_save_path: str = "./sunburst_city.html"
+    ) -> pathlib.Path:
+        """
+            导出城市分布图
+        """
+        image = (
+            Sunburst(init_opts=opts.InitOpts(width="1000px", height="600px"))  # 设定画布长宽
+            .add(
+                "",
+                data_pair=format_sunburst_city(data),  # 载入数据
+                highlight_policy="ancestor",
+                radius=[0, "95%"],
+                sort_="null",
+                levels=[
+                    {},  # 第一圈样式，如果有国家的话就不会空着
+                    {
+                        "r0": "15%",
+                        "r": "45%",
+                        "itemStyle": {"borderWidth": 2},
+                        "label": {"rotate": "tangential"},
+                    },  # 第二圈样式，对标省
+                    {
+                        "r0": "35%",
+                        "r": "70%",
+                        "label": {"position": "outside", "padding": 3, "silent": False},
+                        "itemStyle": {"borderWidth": 1},
+                    },  # 最外圈样式，对标市
+                ],
+            )
+            # 设定标题
+            .set_global_opts(title_opts=opts.TitleOpts(title="Sunburst-城市分布"))
+            .set_series_opts(label_opts=opts.LabelOpts(formatter="{b}"))  # 设定名称
+        )
+        path = image.render(image_result_save_path)
+        success(f"make city sunburst: {path}")
+        return pathlib.Path(path)
+
+    @error_log()
+    def make_icon_wall(
+        image_root_path: str,
+        image_result_save_path: str = "./icon_wall.png",
+        length: int = 1440,
+        weight: int = 900,
+        patterns: str = "*",
+    ) -> pathlib.Path:
+        """
+            生成图片墙
+            patterns: *_0 好友
+                  *   全部
+        """
+        images = list(
+            filter(
+                check_if_can_open,
+                pathlib.Path(image_root_path).glob(f"**/{patterns}.png"),
+            )
+        )
+        per_size = int(math.sqrt(length * weight / len(images)))
+        image = Image.new("RGBA", (length, weight))
+        for indexs, (x, y) in enumerate(
+            product(range(int(length / per_size)), range(int(weight / per_size)))
+        ):
+            img = Image.open(images[indexs])
+            img = img.resize((per_size, per_size), Image.ANTIALIAS)
+            image.paste(img, (x * per_size, y * per_size))
+        image.save(image_result_save_path)
+        success(f"make icon wall: {image_result_save_path}")
+        return pathlib.Path(image_result_save_path)

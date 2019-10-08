@@ -1,24 +1,32 @@
 import os
 import time
+import random
+import pathlib
 from contextlib import contextmanager
+import requests
 
 from retry import retry
 
 from webot.conf import config
-from webot.data import API_target
-from webot.log import error, info, debug_error_log
-from urllib.parse import urljoin
+from webot.log import error, info, debug_error_log, debug
+from PIL import Image
 
 
 @retry(delay=1)
-def get_pic(session, url, full=False):
+def get_pic(session: requests.Session, url: str, name: str = ""):
     try:
-        return session.get(url if full else urljoin(API_target, url)).content
+        img = session.get(url).content
+        if name:
+            with pathlib.Path(name).open("wb") as file:
+                file.write(img)
+        return img
     except Exception as e:
         raise e
 
 
-def error_log(target="", default=None, raise_err=False, raise_exit=False):
+def error_log(
+    target: str = "", default=None, raise_err: bool = False, raise_exit: bool = False
+):
     def decorator(func):
         def wrapper(*args, **kwargs):
             func_name = func.__name__ if "__name__" in dir(func) else ""
@@ -43,10 +51,10 @@ def error_log(target="", default=None, raise_err=False, raise_exit=False):
 
 
 @contextmanager
-def checkTimes(msg="", level=3):
+def check_times(msg: str = "", level: int = 3):
     timeStart = time.time()
     yield
-    info(f"{msg} cost times: {round(time.time()-timeStart,level)}s")
+    debug(f"{msg} cost times: {round(time.time()-timeStart,level)}s")
 
 
 def checkCount(func):
@@ -78,13 +86,16 @@ def addupdate():
     config.status["updated"] += 1
 
 
-def checkPath(path):
+def check_path(path):
     return os.path.exists(os.path.dirname(path))
 
 
-def initPath(path):
-    if not checkPath(path):
-        os.makedirs(os.path.dirname(path))
+def init_path(path):
+    if not check_path(path):
+        parent_path = os.path.dirname(path)
+        os.makedirs(parent_path)
+        info(f"create path: {parent_path}")
+    return pathlib.Path(path)
 
 
 def make_chunk(datas, length=512):
@@ -99,3 +110,47 @@ def make_chunk(datas, length=512):
                 data = None
                 break
         yield chunk
+
+
+def random_color():
+    return "#" + "".join([random.choice("0123456789abcdef") for j in range(6)])
+
+
+def format_sunburst_city(data):  # 整理好友城市数据，将其变为一个可以直接使用的字典
+    datas = {}
+    for item in data["MemberList"]:
+        province = item["Province"]
+        city = item["City"]
+        if len(province) > 5:
+            continue
+        if province not in datas:
+            datas[province] = {}
+        if city not in datas[province]:
+            datas[province][city] = 1
+        else:
+            datas[province][city] += 1
+
+    result = []
+    for province, pitem in datas.items():
+        result.append(
+            {
+                "name": province,
+                "itemStyle": {"color": random_color()},
+                "children": [
+                    {
+                        "name": city,
+                        "value": citem,
+                        "itemStyle": {"color": random_color()},
+                    }
+                    for city, citem in pitem.items()
+                ],
+            }
+        )
+    return result
+
+
+def check_if_can_open(path):
+    try:
+        return Image.open(path)
+    except Exception as e:
+        pass
