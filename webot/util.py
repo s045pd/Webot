@@ -78,7 +78,7 @@ class Device:
         """
             打印图片
         """
-        if platform.system().lower() != "darwin":
+        if platform.system().lower() == "darwin":
             imgcat(buffer)
         else:
             code_img = threading.Thread(target=local_func, args=(buffer,))

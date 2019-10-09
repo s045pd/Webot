@@ -149,7 +149,7 @@ bot().run(True, False)
 
 ### 6. 区域分布旭日图
 
-<iframe src="./media/sunburst_city.html" width="700px" height="500px" frameborder="0" scrolling="no"> </iframe>
+![](./media/sunburst_city.gif)
 
 
 ## TODO

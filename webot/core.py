@@ -16,8 +16,16 @@ from PIL import Image
 from retry import retry
 from urlextract import URLExtract
 
-from webot.common import (addfailed, addsucess, check_path, check_times,
-                          error_log, format_sunburst_city, get_pic, init_path)
+from webot.common import (
+    addfailed,
+    addsucess,
+    check_path,
+    check_times,
+    error_log,
+    format_sunburst_city,
+    get_pic,
+    init_path,
+)
 from webot.conf import conf
 from webot.data import *
 from webot.exporter import create_json, load_worker, save_file, save_worker
@@ -27,7 +35,6 @@ from webot.util import Device
 
 with contextlib.redirect_stdout(None):
     import pygame
-
 
 
 @dataclass()
