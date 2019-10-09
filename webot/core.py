@@ -1,41 +1,33 @@
+import contextlib
 import hashlib
 import json
+import pathlib
 import threading
 import time
-
+from dataclasses import dataclass
+from io import BytesIO
 
 import execjs
-import pathlib
-import contextlib
-
-with contextlib.redirect_stdout(None):
-    import pygame
+import filetype
 import requests
 import requests_html
-import filetype
-from io import BytesIO
 from imgcat import imgcat
 from PIL import Image
 from retry import retry
 from urlextract import URLExtract
-from dataclasses import dataclass
 
-from webot.common import (
-    addfailed,
-    addsucess,
-    check_path,
-    check_times,
-    error_log,
-    get_pic,
-    init_path,
-    format_sunburst_city,
-)
+from webot.common import (addfailed, addsucess, check_path, check_times,
+                          error_log, format_sunburst_city, get_pic, init_path)
 from webot.conf import conf
 from webot.data import *
 from webot.exporter import create_json, load_worker, save_file, save_worker
 from webot.log import debug, error, info, success, warning
 from webot.parser import Parser
 from webot.util import Device
+
+with contextlib.redirect_stdout(None):
+    import pygame
+
 
 
 @dataclass()
@@ -57,6 +49,7 @@ class Webot:
     __encoding = None  # 默认编码格式
 
     __qr_code_uuid = None  # 二维码UUID
+    __qr_code_img = None  # 二维码图片
     __device_id = Device.create_device_id()
 
     __msg_id = None  # 消息id
@@ -85,13 +78,21 @@ class Webot:
         self.__qr_code_uuid = Parser.get_qr_code_uuid(resp)
         self.__encoding = Parser.get_encoding(resp)
 
+    @error_log()
+    def show_qrcode_local(self, buffer):
+        with pathlib.Path(API_qrcode_name).open("wb") as image:
+            image.write(buffer)
+
+        self.__qr_code_img = Image.open(API_qrcode_name)
+        self.__qr_code_img.show()
+
     @error_log(raise_exit=True)
     def get_qrcode_img(self):
         """
             获取二维码
         """
         resp = self.get(f"{API_qrcode}{self.__qr_code_uuid}")
-        Device.show_qrcode(resp.content)
+        Device.show_qrcode(resp.content, self.show_qrcode_local)
 
     @error_log()
     def get_base_request(self):
@@ -161,6 +162,8 @@ class Webot:
         """
         warning("Waiting for app scan")
         self.login_wait(True)
+        if self.__qr_code_img:
+            self.__qr_code_img.fp.close()
 
     @error_log(raise_err=True)
     def login_appwait(self, get_ticket=True):
@@ -398,20 +401,19 @@ class Webot:
         """
             获得视频数据
         """
-        self.get_image(msg_id,play)
+        self.get_image(msg_id, play)
         content = BytesIO()
         for item in self.get(
             API_webwxgetvideo,
             params={"msgid": msg_id, "skey": self.__auth_data["skey"]},
-            headers={'Range': 'bytes=0-'},
-            stream=True
+            headers={"Range": "bytes=0-"},
+            stream=True,
         ).iter_content():
             print(1024)
             content.write(item)
         if play:
             pass
         return content.getvalue()
-
 
     def check_online_status(self):
         """

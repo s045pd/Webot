@@ -9,18 +9,37 @@
     <a target="_blank" href="Wechat" title="Wechat"><img src="https://img.shields.io/badge/power_by-Wechat-Green.svg"></a></p>
 </p>
 
-
 ## 现有功能
 
-所有的语音数据将被保存至```datas```文件夹中
+- 简单文字消息回复
+- 消息过滤
+- 实时信息展示(带斗图表情(MAC平台))
+- 语音消息自动播报及保存
+- 通讯录导出
+- 好友地区分布旭日图导出
+- 好友头像墙制作
 
-所有的摘要、身份、及朋友列表存至```extra```文件夹中
+## 文件夹结构
 
--  简单文字消息回复
--  消息过滤
--  实时信息展示(带斗图表情(MAC平台))
--  语音消息自动播报及保存
--  通讯录导出
+- ```extra``` 
+  - ```analysis``` 分析整合结果文件夹
+    - ```x_contacts.xlsx``` 通讯录
+    - ```x_icon_wall.png``` 头像墙
+    - ```x_sunburst_city.html``` 区域分布旭日图
+  - ```log``` 聊天记录[未做]
+  - ```media``` 媒体文件夹
+    - ```emoji``` 聊天表情
+    - ```icons``` 好友头像
+    - ```images``` 聊天图片
+    - ```videos``` 聊天视频[未做]
+    - ```voices``` 聊天语音
+  - ```static```
+    - ```⚡️current_msg.json``` 最新消息日志[用于调试]
+    - ```batch_contacts.json``` 群聊数据
+    - ```contact.json``` 通讯录数据
+    - ```person_data.json``` 个人数据
+    - ```wxbot.pkl``` 缓存登录信息
+
 
 ## 逻辑图
 
@@ -123,6 +142,15 @@ bot().run(True, False)
 ### 4.机器人预设回复及表情
 
 ![](./media/robot.png)
+
+### 5. 头像墙
+
+![](./media/icon_wall.jpg)
+
+### 6. 区域分布旭日图
+
+<iframe src="./media/sunburst_city.html" width="700px" height="500px" frameborder="0" scrolling="no"> </iframe>
+
 
 ## TODO
 

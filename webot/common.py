@@ -1,15 +1,15 @@
 import os
-import time
-import random
 import pathlib
+import random
+import time
 from contextlib import contextmanager
-import requests
 
+import requests
+from PIL import Image
 from retry import retry
 
 from webot.conf import config
-from webot.log import error, info, debug_error_log, debug
-from PIL import Image
+from webot.log import debug, debug_error_log, error, info
 
 
 @retry(delay=1)

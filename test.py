@@ -10,4 +10,4 @@ class bot(Webot):
                 self.send_text(msg["from"], "你好呀！")
 
 
-bot().run(hot_reload=True)
+bot().run(hot_reload=False)

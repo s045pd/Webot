@@ -1,9 +1,10 @@
 import re
+
 import requests
 
 from webot.common import error_log
-from webot.log import success, warning
 from webot.data import *
+from webot.log import success, warning
 
 
 class Parser:

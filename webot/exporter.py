@@ -1,6 +1,6 @@
 import json
-import pickle
 import pathlib
+import pickle
 
 import pandas
 

@@ -1,39 +1,40 @@
-import random
-import string
-import time
 import math
 import pathlib
+import platform
+import random
+import string
 import threading
-import requests
+import time
 from io import BytesIO
+from itertools import product
+from urllib.parse import urljoin
 
 import execjs
 import progressbar
-from itertools import product
+import requests
+from imgcat import imgcat
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as openpyxlImage
+from PIL import Image
 from pyecharts import options as opts
 from pyecharts.charts import Sunburst
-from PIL import Image
-from imgcat import imgcat
-from urllib.parse import urljoin
 
 from webot.common import (
+    check_if_can_open,
     error_log,
+    format_sunburst_city,
     get_pic,
     random_color,
-    format_sunburst_city,
-    check_if_can_open,
 )
+from webot.conf import conf
 from webot.data import (
+    API_analysis_path,
     API_conf_path,
+    API_media_icon_path,
     API_media_path,
     API_target,
-    API_media_icon_path,
-    API_analysis_path,
 )
 from webot.log import debug, success, warning
-from webot.conf import conf
 
 
 class Device:
@@ -72,20 +73,15 @@ class Device:
         return timestamp
 
     @staticmethod
-    @error_log()
-    def show_qrcode(buffer) -> None:
+    @error_log(raise_exit=True)
+    def show_qrcode(buffer, local_func) -> None:
         """
             打印图片
         """
-
-        def open():
-            img = Image.open(BytesIO(buffer))
-            img.show()
-
-        try:
+        if platform.system().lower() != "darwin":
             imgcat(buffer)
-        except Exception as e:
-            code_img = threading.Thread(target=open)
+        else:
+            code_img = threading.Thread(target=local_func, args=(buffer,))
             code_img.start()
 
     @error_log()
