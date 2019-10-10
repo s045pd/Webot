@@ -19,21 +19,9 @@ from PIL import Image
 from pyecharts import options as opts
 from pyecharts.charts import Sunburst
 
-from webot.common import (
-    check_if_can_open,
-    error_log,
-    format_sunburst_city,
-    get_pic,
-    random_color,
-)
+from webot.common import check_if_can_open, error_log, format_sunburst_city, get_pic
 from webot.conf import conf
-from webot.data import (
-    API_analysis_path,
-    API_conf_path,
-    API_media_icon_path,
-    API_media_path,
-    API_target,
-)
+from webot.data import API_analysis_path, API_conf_path, API_media_icon_path, API_target
 from webot.log import debug, success, warning
 
 

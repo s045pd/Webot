@@ -72,10 +72,12 @@ python3 -m pip install -r requirements.txt
 
 在安装好依赖之后,我们在通过```webot/conf.py```该文件进行默认配置修改, 也可以通过```run```方法传入, 各参数作用如下。
 
--  ```debug = True```  开启debug模式
--  ```play_voice = True```  自动播报声音
--  ```export_xlsx = True```  自动导出好友列表
--  ```need_interaction = False```  交互式shell
+- ```debug = True```  开启debug模式
+- ```play_voice = True```  自动播报声音
+- ```export_xlsx = True```  自动导出好友列表
+- ```make_icon_wall = True``` 自动导出头像墙
+- ```sunburst_city = True``` 自动导出好友分布旭日图
+- ```need_interaction = False```  交互式shell
 
 ## 案例用法
 下面是一个简单的文本回复案例即```test.py```
@@ -154,9 +156,9 @@ bot().run(True, False)
 
 ## TODO
 
--  文件及图片发送
--  其他更多思考中的功能
--  基于sqlite的消息记录
+- 文件及图片发送
+- 其他更多思考中的功能
+- 基于sqlite的消息记录
 
 ## 📝 License
 

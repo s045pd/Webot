@@ -152,5 +152,5 @@ def format_sunburst_city(data):  # 整理好友城市数据，将其变为一个
 def check_if_can_open(path):
     try:
         return Image.open(path)
-    except Exception as e:
+    except Exception:
         pass
