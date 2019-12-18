@@ -387,7 +387,7 @@ class Webot:
             params={"msgid": msg_id, "skey": self.__auth_data["skey"]},
         )
         if play:
-            pass
+            imgcat(resp.content)
         return resp.content
 
     @error_log()
@@ -408,15 +408,14 @@ class Webot:
         """
             获得视频数据
         """
-        self.get_image(msg_id, play)
+        # self.get_image(msg_id, play)
         content = BytesIO()
-        for item in self.get(
+        for item in self.__session.get(
             API_webwxgetvideo,
             params={"msgid": msg_id, "skey": self.__auth_data["skey"]},
             headers={"Range": "bytes=0-"},
             stream=True,
         ).iter_content():
-            print(1024)
             content.write(item)
         if play:
             pass
@@ -552,22 +551,29 @@ class Webot:
         def worker():
             debug("start main loop")
             while True:
-                sync_check_res = self.get_msg_signal()
-                debug(f"sync_check_res: {sync_check_res}")
-                retcode, selector = (
-                    sync_check_res["retcode"],
-                    sync_check_res["selector"],
-                )
-                if retcode == "0" and int(selector) > 0:
-                    msgs = self.get_msg_contents()
-                    debug(f"Contents: {msgs}")
-                    for msg in msgs["AddMsgList"]:
-                        _, result = self.data_ctrl(msg)
-                        self.send_back(result)
-                elif retcode == "1101":
-                    self.__is_online = False
-                    warning("main loop offline")
+                try:
+                    sync_check_res = self.get_msg_signal()
+                    debug(f"sync_check_res: {sync_check_res}")
+                    retcode, selector = (
+                        sync_check_res["retcode"],
+                        sync_check_res["selector"],
+                    )
+                    if retcode == "0" and int(selector) > 0:
+                        msgs = self.get_msg_contents()
+                        debug(f"Contents: {msgs}")
+                        for msg in msgs["AddMsgList"]:
+                            _, result = self.data_ctrl(msg)
+                            self.send_back(result)
+                    elif retcode == "1101":
+                        self.__is_online = False
+                        warning("main loop offline")
+                        return
+                except KeyboardInterrupt:
                     return
+                except Exception as e:
+                    error(e)
+                finally:
+                    time.sleep(0.1)
 
         def interaction():
             """
@@ -655,14 +661,13 @@ class Webot:
             save_file(voice, filename)
             result["content"] = filename
         elif msg_type == MSGTYPE_VIDEO:
-            video = self.get_video(msg["MsgId"])
+            video = self.get_video(msg["MsgId"], True)
             filename = str(API_meida_video_path / f"{number}.mp4")
             save_file(video, filename)
             result["content"] = filename
         elif msg_type == MSGTYPE_IMAGE:
-            image = self.get_image(msg["MsgId"])
+            image = self.get_image(msg["MsgId"], True)
             filename = str(API_meida_image_path / f"{number}.png")
-            imgcat(Image.open(BytesIO(image)))
             save_file(image, filename)
             result["content"] = filename
         elif msg_type == MSGTYPE_EMOTICON:
@@ -670,7 +675,7 @@ class Webot:
             if not urls:
                 return
             filename = str(API_meida_emoji_path / f"{number}.png")
-            imgcat(Image.open(BytesIO(get_pic(self.__session, urls[0], filename))))
+            imgcat(get_pic(self.__session, urls[0], filename))
             result["content"] = urls[0]
         elif msg_type == MSGTYPE_APP:
             pass
