@@ -205,7 +205,6 @@ API_checknums = 5
 
 from webot.common import init_path
 
-
 YOUR_NAME = "张三"
 API_conf_path = init_path("extra/")
 

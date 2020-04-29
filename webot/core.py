@@ -16,16 +16,8 @@ from PIL import Image
 from retry import retry
 from urlextract import URLExtract
 
-from webot.common import (
-    addfailed,
-    addsucess,
-    check_path,
-    check_times,
-    error_log,
-    format_sunburst_city,
-    get_pic,
-    init_path,
-)
+from webot.common import (addfailed, addsucess, check_path, check_times,
+                          error_log, format_sunburst_city, get_pic, init_path)
 from webot.conf import conf
 from webot.data import *
 from webot.exporter import create_json, load_worker, save_file, save_worker
@@ -211,9 +203,12 @@ class Webot:
         """
         if self.__hot_reload and check_path(API_hotreload_file):
             try:
-                self.__session, self.__auth_data, self.__person_data, self.__get_ticket_url = load_worker(
-                    API_hotreload_file
-                )
+                (
+                    self.__session,
+                    self.__auth_data,
+                    self.__person_data,
+                    self.__get_ticket_url,
+                ) = load_worker(API_hotreload_file)
                 # self.login_push_wait()
                 # self.login_appwait(False)
             except Exception:
@@ -655,21 +650,25 @@ class Webot:
                 result["content"] = msg["Content"]
             elif sub_type == 48:
                 result["content"] = msg["Content"].split(":")[0]
+            self.on_text(result)
         elif msg_type == MSGTYPE_VOICE:
             voice = self.get_voice(msg["MsgId"], conf.play_voice)
             filename = str(API_meida_voice_path / f"{number}.mp3")
             save_file(voice, filename)
             result["content"] = filename
+            self.on_voice(result)
         elif msg_type == MSGTYPE_VIDEO:
             video = self.get_video(msg["MsgId"], True)
             filename = str(API_meida_video_path / f"{number}.mp4")
             save_file(video, filename)
             result["content"] = filename
+            self.on_video(result)
         elif msg_type == MSGTYPE_IMAGE:
             image = self.get_image(msg["MsgId"], True)
             filename = str(API_meida_image_path / f"{number}.png")
             save_file(image, filename)
             result["content"] = filename
+            self.on_image(result)
         elif msg_type == MSGTYPE_EMOTICON:
             urls = URLExtract().find_urls(msg["Content"])
             if not urls:
@@ -677,6 +676,7 @@ class Webot:
             filename = str(API_meida_emoji_path / f"{number}.png")
             imgcat(get_pic(self.__session, urls[0], filename))
             result["content"] = urls[0]
+            self.on_emoji(result)
         elif msg_type == MSGTYPE_APP:
             pass
             # content += "公众号推送"
@@ -687,6 +687,24 @@ class Webot:
             func(self.translate_text(content + result["content"]))
 
         return msg, result
+
+    def on_text(self, msg):
+        pass
+
+    def on_video(self, msg):
+        pass
+
+    def on_voice(self, msg):
+        pass
+
+    def on_image(self, msg):
+        pass
+
+    def on_emoji(self, msg):
+        pass
+
+    def revice(self, msg):
+        pass
 
     def send_back(self, msg):
         pass

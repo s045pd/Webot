@@ -19,9 +19,11 @@ from PIL import Image
 from pyecharts import options as opts
 from pyecharts.charts import Sunburst
 
-from webot.common import check_if_can_open, error_log, format_sunburst_city, get_pic
+from webot.common import (check_if_can_open, error_log, format_sunburst_city,
+                          get_pic)
 from webot.conf import conf
-from webot.data import API_analysis_path, API_conf_path, API_media_icon_path, API_target
+from webot.data import (API_analysis_path, API_conf_path, API_media_icon_path,
+                        API_target)
 from webot.log import debug, success, warning
 
 
@@ -150,9 +152,10 @@ class Device:
                         x = x - 1
                         index_code = string.ascii_uppercase[x]
                         size = (50, 50)
-                        sheet.column_dimensions[index_code].width, sheet.row_dimensions[
-                            y
-                        ].height = size
+                        (
+                            sheet.column_dimensions[index_code].width,
+                            sheet.row_dimensions[y].height,
+                        ) = size
                         img = openpyxlImage(BytesIO(pic))
                         img.width, img.height = size
                         sheet.add_image(img, f"{index_code}{y}")
