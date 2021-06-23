@@ -19,11 +19,9 @@ from PIL import Image
 from pyecharts import options as opts
 from pyecharts.charts import Sunburst
 
-from webot.common import (check_if_can_open, error_log, format_sunburst_city,
-                          get_pic)
+from webot.common import check_if_can_open, error_log, format_sunburst_city, get_pic
 from webot.conf import conf
-from webot.data import (API_analysis_path, API_conf_path, API_media_icon_path,
-                        API_target)
+from webot.data import API_analysis_path, API_conf_path, API_media_icon_path, API_target
 from webot.log import debug, success, warning
 
 
@@ -32,7 +30,7 @@ class Device:
     @error_log()
     def create_device_id() -> str:
         """
-            创建随机设备指纹
+        创建随机设备指纹
         """
         device_id = f"e{str(random.random())[2:17]}"
         debug(f"device_id: {device_id}")
@@ -42,7 +40,7 @@ class Device:
     @error_log()
     def create_client_msg_id() -> str:
         """
-            创建客户端信息指纹
+        创建客户端信息指纹
         """
         client_msg_id = int(time.time() * 1e3) + random.randint(1, 1000)
         debug(f"client_msg_id: {client_msg_id}")
@@ -52,7 +50,7 @@ class Device:
     @error_log()
     def get_timestamp(reverse: bool = False) -> int:
         """
-            获取时间戳,支持取反
+        获取时间戳,支持取反
         """
         timestamp = None
         if not reverse:
@@ -66,7 +64,7 @@ class Device:
     @error_log(raise_exit=True)
     def show_qrcode(buffer, local_func) -> None:
         """
-            打印图片
+        打印图片
         """
         if platform.system().lower() == "darwin":
             imgcat(buffer)
@@ -77,7 +75,7 @@ class Device:
     @error_log()
     def trans_map(contacts: dict, batch_contacts: dict) -> dict:
         """
-            创建名称列表
+        创建名称列表
         """
         choice_name = (
             lambda item: item.get("RemarkName", "").strip()
@@ -96,7 +94,7 @@ class Device:
     @staticmethod
     def filters(types: bool = None, is_me: bool = False, is_group: bool = False):
         """
-            消息过滤
+        消息过滤
         """
 
         def decorator(func):
@@ -123,7 +121,7 @@ class Device:
         contacts: dict, session: requests.Session, person_data: dict
     ) -> pathlib.Path:
         """
-            导出通讯录
+        导出通讯录
         """
         warning("Contact exporting...")
         wb = Workbook()
@@ -171,7 +169,7 @@ class Device:
         data: dict, image_result_save_path: str = "./sunburst_city.html"
     ) -> pathlib.Path:
         """
-            导出城市分布图
+        导出城市分布图
         """
         image = (
             Sunburst(init_opts=opts.InitOpts(width="1000px", height="600px"))  # 设定画布长宽
@@ -214,9 +212,9 @@ class Device:
         patterns: str = "*",
     ) -> pathlib.Path:
         """
-            生成图片墙
-            patterns: *_0 好友
-                  *   全部
+        生成图片墙
+        patterns: *_0 好友
+              *   全部
         """
         images = list(
             filter(

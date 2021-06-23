@@ -2,6 +2,7 @@ import contextlib
 import hashlib
 import json
 import pathlib
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -16,8 +17,16 @@ from PIL import Image
 from retry import retry
 from urlextract import URLExtract
 
-from webot.common import (addfailed, addsucess, check_path, check_times,
-                          error_log, format_sunburst_city, get_pic, init_path)
+from webot.common import (
+    addfailed,
+    addsucess,
+    check_path,
+    check_times,
+    error_log,
+    format_sunburst_city,
+    get_pic,
+    init_path,
+)
 from webot.conf import conf
 from webot.data import *
 from webot.exporter import create_json, load_worker, save_file, save_worker
@@ -29,7 +38,7 @@ with contextlib.redirect_stdout(None):
     import pygame
 
 
-@dataclass()
+@dataclass
 class Webot:
     __session = requests_html.HTMLSession()
     __session.headers = conf.fakeHeader
@@ -51,6 +60,9 @@ class Webot:
     __qr_code_img = None  # 二维码图片
     __device_id = Device.create_device_id()
 
+    __batch_contacts = {}  # 群组信息
+    __person_map = {}  # 通讯录转换结果
+
     __msg_id = None  # 消息id
     __hot_reload = None  # 热启动参数
 
@@ -71,7 +83,7 @@ class Webot:
     @error_log(raise_exit=True)
     def get_qrcode_uid(self):
         """
-            获取二维码ID
+        获取二维码ID
         """
         resp = self.get(API_jsLogin)
         self.__qr_code_uuid = Parser.get_qr_code_uuid(resp)
@@ -88,7 +100,7 @@ class Webot:
     @error_log(raise_exit=True)
     def get_qrcode_img(self):
         """
-            获取二维码
+        获取二维码
         """
         resp = self.get(f"{API_qrcode}{self.__qr_code_uuid}")
         Device.show_qrcode(resp.content, self.show_qrcode_local)
@@ -96,7 +108,7 @@ class Webot:
     @error_log()
     def get_base_request(self):
         """
-            获取基础请求信息
+        获取基础请求信息
         """
         base_request = {
             "BaseRequest": {
@@ -111,7 +123,7 @@ class Webot:
     @error_log()
     def create_synckey(self):
         """
-            组合生成synckey
+        组合生成synckey
         """
         synckey = "|".join(
             [
@@ -126,7 +138,7 @@ class Webot:
     @error_log(raise_err=True)
     def login_wait(self, local=None):
         """
-            登录过程
+        登录过程
         """
         return self.get(
             API_login if local else API_check_login,
@@ -143,7 +155,7 @@ class Webot:
     @error_log(raise_err=True)
     def login_push_wait(self):
         """
-            短时热启动
+        短时热启动
         """
         self.__session.cookies.update(
             requests_html.requests.utils.cookiejar_from_dict({"login_frequency": "2"})
@@ -157,7 +169,7 @@ class Webot:
 
     def login_localwait(self):
         """
-            等待本地终端扫描
+        等待本地终端扫描
         """
         warning("Waiting for app scan")
         self.login_wait(True)
@@ -167,7 +179,7 @@ class Webot:
     @error_log(raise_err=True)
     def login_appwait(self, get_ticket=True):
         """
-            等待本地终端确认
+        等待本地终端确认
         """
         warning("Waiting for app confirm")
         resp = self.login_wait(False)
@@ -178,7 +190,7 @@ class Webot:
     @error_log()
     def get_ticket(self):
         """
-            获取个人信息票据并更新部分cookie
+        获取个人信息票据并更新部分cookie
         """
         info(f"Redirect to --> {self.__get_ticket_url}")
         resp = self.get(
@@ -199,7 +211,7 @@ class Webot:
 
     def login(self):
         """
-            获取认证数据
+        获取认证数据
         """
         if self.__hot_reload and check_path(API_hotreload_file):
             try:
@@ -224,7 +236,7 @@ class Webot:
     @error_log()
     def login_success_init(self):
         """
-            成功登陆并初始化wx
+        成功登陆并初始化wx
         """
         resp = self.post(
             API_webwxinit,
@@ -252,7 +264,7 @@ class Webot:
     @error_log()
     def get_msg_id(self):
         """
-            获取消息身份id
+        获取消息身份id
         """
         jsondata = self.get_base_request()
         jsondata.update(
@@ -273,7 +285,7 @@ class Webot:
 
     def get_msg_signal(self):
         """
-            消息信号检查
+        消息信号检查
         """
         call_back = {"retcode": "0", "selector": "0"}
         try:
@@ -306,7 +318,7 @@ class Webot:
     @error_log(raise_exit=True)
     def get_msg_contents(self):
         """
-            获取消息详情
+        获取消息详情
         """
         jsondata = self.get_base_request()
         jsondata.update(
@@ -330,7 +342,7 @@ class Webot:
     @error_log(raise_exit=True)
     def get_contact(self):
         """
-            获取基础联系人
+        获取基础联系人
         """
         resp = self.get(
             API_webwxgetcontact,
@@ -347,35 +359,46 @@ class Webot:
         info(f"Get friends: [{self.__contacts['MemberCount']}]")
 
     @error_log()
-    def get_batch_contact(self):
+    def get_batch_contact(self, contact_list: list = None):
         """
-            获取群组联系人
+        获取群组联系人
         """
-        jsondata = self.get_base_request()
-        contact_list = [
-            {"UserName": item, "EncryChatRoomId": ""}
-            for item in self.__person_data["ChatSet"].split(",")
-            if "@@" in item
-        ]
-        jsondata.update({"Count": len(contact_list), "List": contact_list})
-        resp = self.post(
-            API_webwxbatchgetcontact,
-            params={
-                "type": "ex",
-                "r": Device.get_timestamp(),
-                "lang": "zh_CN",
-                "pass_ticket": self.__auth_data["pass_ticket"],
-            },
-            json=jsondata,
+        if not contact_list:
+            contact_list = self.__person_data["ChatSet"].split(",")
+
+        contact_list = list(
+            filter(lambda name: name in self.__person_map, contact_list)
         )
-        self.__batch_contacts = resp.json()
+
+        if not contact_list:
+            return
+
+        for contact_list in [
+            {"UserName": item, "EncryChatRoomId": ""}
+            for item in contact_list
+            if "@@" in item
+        ]:
+            contact_list = [contact_list]
+            jsondata = self.get_base_request()
+            jsondata.update({"Count": len(contact_list), "List": contact_list})
+            resp = self.post(
+                API_webwxbatchgetcontact,
+                params={
+                    "type": "ex",
+                    "r": Device.get_timestamp(),
+                    "lang": "zh_CN",
+                    "pass_ticket": self.__auth_data["pass_ticket"],
+                },
+                json=jsondata,
+            )
+            self.__batch_contacts.update(resp.json())
         self.__person_map = Device.trans_map(self.__contacts, self.__batch_contacts)
         create_json(self.__batch_contacts, API_static_path / "batch_contacts.json")
 
     @error_log()
     def get_image(self, msg_id, play=False):
         """
-            获得视频数据
+        获得视频数据
         """
         resp = self.get(
             API_webwxgetmsgimg,
@@ -388,7 +411,7 @@ class Webot:
     @error_log()
     def get_voice(self, msg_id, play=False):
         """
-            获得语音数据
+        获得语音数据
         """
         resp = self.get(
             API_webwxgetvoice,
@@ -401,7 +424,7 @@ class Webot:
     @error_log()
     def get_video(self, msg_id, play=False):
         """
-            获得视频数据
+        获得视频数据
         """
         # self.get_image(msg_id, play)
         content = BytesIO()
@@ -418,7 +441,7 @@ class Webot:
 
     def check_online_status(self):
         """
-            检查在线状态
+        检查在线状态
         """
         try:
             while True:
@@ -428,7 +451,7 @@ class Webot:
                         debug(f"{name} closed!")
                         threadTarget.join()
                     success("end!")
-                    exit()
+                    sys.exit()
                 time.sleep(1)
         except Exception:
             self.__is_online = False
@@ -436,7 +459,7 @@ class Webot:
     @error_log()
     def send_text(self, target, msg):
         """
-            文本消息发送
+        文本消息发送
         """
         jsondata = self.get_base_request()
         LocalID = str(execjs.eval("+new Date()"))
@@ -475,7 +498,7 @@ class Webot:
     @error_log()
     def send_file(self, target, filename):
         """
-            文本文件发送
+        文本文件发送
         """
         with pathlib.Path(filename).open("rb") as file:
             datas = file.read()
@@ -519,7 +542,7 @@ class Webot:
 
     def search_friend(self, strs):
         """
-            好友搜索
+        好友搜索
         """
         for index, value in enumerate(self.__contacts["MemberList"]):
             if strs in value["NickName"]:
@@ -529,7 +552,7 @@ class Webot:
 
     def index_friend(self, hashid):
         """
-            好友索引
+        好友索引
         """
         for value in self.__contacts["MemberList"]:
             if hashid == value["UserName"]:
@@ -538,7 +561,7 @@ class Webot:
 
     def msg_worker(self):
         """
-            消息处理
+        消息处理
         """
 
         debug("start msg worker")
@@ -572,7 +595,7 @@ class Webot:
 
         def interaction():
             """
-                简单交互式面板
+            简单交互式面板
             """
             debug("start isnteraction")
             while True:
@@ -621,7 +644,7 @@ class Webot:
     def data_ctrl(self, msg):
 
         """
-            打印基础消息并整理
+        打印基础消息并整理
         """
         msg_type = msg["MsgType"]
         sub_type = msg["SubMsgType"]
@@ -644,6 +667,7 @@ class Webot:
             "is_me": is_me,
             "is_group": is_group,
         }
+        self.get_batch_contact([msg["FromUserName"], msg["ToUserName"]])
         number = f"{result['time']}_{result['from_nick']}_{msg['MsgId']}"  # 消息编号
         if msg_type == MSGTYPE_TEXT:
             if sub_type == 0:
@@ -743,7 +767,7 @@ class Webot:
 
     def translate_text(self, words):
         """
-            美化消息
+        美化消息
         """
         for k, v in self.__person_map.items():
             words = words.replace(k, v)

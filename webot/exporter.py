@@ -26,7 +26,7 @@ def create_json(data: dict, filename: str = "res.json"):
 
 def save_worker(data: dict, filename: str = "res.pkl"):
     """
-        会话保存
+    会话保存
     """
     with check_times(f"Saved {filename}"):
         init_path(filename)
@@ -36,7 +36,7 @@ def save_worker(data: dict, filename: str = "res.pkl"):
 
 def load_worker(filename: str = "res.pkl") -> object:
     """
-        会话还原
+    会话还原
     """
     with check_times(f"Saved {filename}"):
         with pathlib.Path(filename).open("rb") as f:
@@ -45,7 +45,7 @@ def load_worker(filename: str = "res.pkl") -> object:
 
 def save_file(data: str, filename: str) -> None:
     """
-        文件保存
+    文件保存
     """
     init_path(filename)
     with pathlib.Path(filename).open("wb") as f:
