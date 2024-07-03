@@ -4,13 +4,14 @@
     <p align="center">这是一个基于web微信协议的简易微信机器人，目前功能比较简陋且不堪🙈。</p>
         <p align="center">
     <a href="https://www.codacy.com/manual/aoii103/Webot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=aoii103/Webot&amp;utm_campaign=Badge_Grade"><img src="https://api.codacy.com/project/badge/Grade/cb6b7e771f5b4cf8a2f7d65aa42a32bf"/></a>
-    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.7.4-green.svg"></a>
+    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.10-green.svg"></a>
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
     <a target="_blank" href="Wechat" title="Wechat"><img src="https://img.shields.io/badge/power_by-Wechat-Green.svg"></a></p>
 </p>
 
 ## 现有功能
 
+- AI机器人（ollama）
 - 简单文字消息回复
 - 消息过滤
 - 实时信息展示(带斗图表情(Iterm2))
@@ -58,7 +59,7 @@
 
 ## 环境安装
 
-首先保证您已经安装了```python3.7.4```及以上版本,然后依次运行如下命令。
+首先保证您已经安装了```python3.10```及以上版本,然后依次运行如下命令。
 
 ```sh
 git clone https://github.com/aoii103/Webot.git

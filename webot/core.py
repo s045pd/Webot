@@ -197,6 +197,9 @@ class Webot:
             self.__get_ticket_url,
             params={"fun": "new", "lang": "zh_CN", "_": Device.get_timestamp()},
         )
+        resp.encoding = 'GB2312'
+        if '暂不支持使用网页版微信' in  resp.text :
+            exit('您的账号不支持网页版微信')
         info(
             f"Get Ticket:{requests_html.requests.utils.dict_from_cookiejar(resp.cookies)}"
         )
